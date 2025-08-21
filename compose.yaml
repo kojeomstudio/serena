@@ -20,7 +20,7 @@ services:
       # - "uv run --directory . serena-mcp-server --transport sse --port 9121 --host 0.0.0.0 --context ide-assistant"
 
   serena-dev:
-    image: serena:dev
+    image: kojeomstudio/serena-dev:v1
     build:
       context: ./
       dockerfile: Dockerfile
