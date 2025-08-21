@@ -21,10 +21,6 @@ services:
 
   serena-dev:
     image: kojeomstudio/serena-dev:v1
-    build:
-      context: ./
-      dockerfile: Dockerfile
-      target: development
     tty: true
     stdin_open: true
     environment:
