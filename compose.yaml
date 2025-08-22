@@ -31,4 +31,4 @@ services:
       - "${SERENA_PORT:-9121}:9121"  # MCP server port
       - "${SERENA_DASHBOARD_PORT:-24282}:24282"  # Dashboard port
     command:
-      - "uv run --directory . serena-mcp-server"
+      - "uv run --directory . serena-mcp-server --transport sse --port 9121 --host 0.0.0.0"
