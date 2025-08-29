@@ -2,9 +2,9 @@ services:
   serena:
     image: kojeomstudio/serena:prod-v1
     # To work with projects, you must mount them as volumes:
-    # volumes:
+    volumes:
       # - ./my-project:/workspace/my-project
-      # - /path/to/another/project:/workspace/another-project
+      - /Users/kojeomstudio:/mcp_workspace/projects
     build:
       context: ./
       dockerfile: Dockerfile
@@ -15,7 +15,7 @@ services:
     environment:
       - SERENA_DOCKER=1
     command:
-      - "uv run --directory . serena-mcp-server --transport sse --port 9121 --host 0.0.0.0"
+      - "uv run serena-mcp-server --transport sse --port 9121 --host 0.0.0.0"
       # Add the context for the IDE assistant
       # - "uv run --directory . serena-mcp-server --transport sse --port 9121 --host 0.0.0.0 --context ide-assistant"
 
