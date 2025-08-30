@@ -2,6 +2,7 @@ services:
   serena:
     image: kojeomstudio/serena:prod-v1
     # To work with projects, you must mount them as volumes:
+    restart: unless-stopped
     volumes:
       # - ./my-project:/workspace/my-project
       - /Users/kojeomstudio:/serena_projects
@@ -22,6 +23,7 @@ services:
   serena-win64:
     image: kojeomstudio/serena:prod-win64-v1
     # To work with projects, you must mount them as volumes:
+    restart: unless-stopped
     volumes:
       # - ./my-project:/workspace/my-project
       - C:/Workspaces/l1server:/serena_projects
@@ -40,6 +42,7 @@ services:
       # - "uv run --directory . serena-mcp-server --transport sse --port 9121 --host 0.0.0.0 --context ide-assistant"
   serena-dev:
     image: kojeomstudio/serena:dev-v1
+    restart: unless-stopped
     tty: true
     stdin_open: true
     environment:
