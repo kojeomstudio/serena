@@ -2,6 +2,7 @@ services:
   serena:
     image: kojeomstudio/serena:prod-v1
     # To work with projects, you must mount them as volumes:
+    restart: unless-stopped
     volumes:
       # - ./my-project:/workspace/my-project
       - /Users/kojeomstudio/AI:/serena_projects/AI
@@ -22,9 +23,10 @@ services:
   serena-win64:
     image: kojeomstudio/serena:prod-win64-v1
     # To work with projects, you must mount them as volumes:
-    # volumes:
+    restart: unless-stopped
+    volumes:
       # - ./my-project:/workspace/my-project
-      # - /path/to/another/project:/workspace/another-project
+      - C:/Workspaces/l1server:/serena_projects
     build:
       context: ./
       dockerfile: Dockerfile
@@ -35,11 +37,12 @@ services:
     environment:
       - SERENA_DOCKER=1
     command:
-      - "uv run --directory . serena-mcp-server --transport sse --port 9121 --host 0.0.0.0"
+      - "uv run --directory /serena_projects serena-mcp-server --transport sse --port 9121 --host 0.0.0.0"
       # Add the context for the IDE assistant
       # - "uv run --directory . serena-mcp-server --transport sse --port 9121 --host 0.0.0.0 --context ide-assistant"
   serena-dev:
     image: kojeomstudio/serena:dev-v1
+    restart: unless-stopped
     tty: true
     stdin_open: true
     environment:
