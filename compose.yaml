@@ -1,6 +1,6 @@
 services:
   serena:
-    image: kojeomstudio/serena:prod-v1
+    image: kojeomstudio/serena:prod-v2
     # To work with projects, you must mount them as volumes:
     restart: unless-stopped
     volumes:
