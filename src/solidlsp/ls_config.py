@@ -56,6 +56,10 @@ class Language(str, Enum):
     ERLANG = "erlang"
     AL = "al"
     REGO = "rego"
+    SCALA = "scala"
+    JULIA = "julia"
+    FORTRAN = "fortran"
+    HASKELL = "haskell"
     # Experimental or deprecated Language Servers
     TYPESCRIPT_VTS = "typescript_vts"
     """Use the typescript language server through the natively bundled vscode extension via https://github.com/yioneko/vtsls"""
@@ -152,6 +156,16 @@ class Language(str, Enum):
                 return FilenameMatcher("*.rego")
             case self.MARKDOWN:
                 return FilenameMatcher("*.md", "*.markdown")
+            case self.SCALA:
+                return FilenameMatcher("*.scala", "*.sbt")
+            case self.JULIA:
+                return FilenameMatcher("*.jl")
+            case self.FORTRAN:
+                return FilenameMatcher(
+                    "*.f90", "*.F90", "*.f95", "*.F95", "*.f03", "*.F03", "*.f08", "*.F08", "*.f", "*.F", "*.for", "*.FOR", "*.fpp", "*.FPP"
+                )
+            case self.HASKELL:
+                return FilenameMatcher("*.hs", "*.lhs")
             case _:
                 raise ValueError(f"Unhandled language: {self}")
 
@@ -277,6 +291,22 @@ class Language(str, Enum):
                 from solidlsp.language_servers.r_language_server import RLanguageServer
 
                 return RLanguageServer
+            case self.SCALA:
+                from solidlsp.language_servers.scala_language_server import ScalaLanguageServer
+
+                return ScalaLanguageServer
+            case self.JULIA:
+                from solidlsp.language_servers.julia_server import JuliaLanguageServer
+
+                return JuliaLanguageServer
+            case self.FORTRAN:
+                from solidlsp.language_servers.fortran_language_server import FortranLanguageServer
+
+                return FortranLanguageServer
+            case self.HASKELL:
+                from solidlsp.language_servers.haskell_language_server import HaskellLanguageServer
+
+                return HaskellLanguageServer
             case _:
                 raise ValueError(f"Unhandled language: {self}")
 
