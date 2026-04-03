@@ -1,5 +1,20 @@
-from serena.config.context_mode import SerenaAgentMode
 from serena.tools import Tool, ToolMarkerDoesNotRequireActiveProject, ToolMarkerOptional
+
+
+class OpenDashboardTool(Tool, ToolMarkerOptional, ToolMarkerDoesNotRequireActiveProject):
+    """
+    Opens the Serena web dashboard in the default web browser.
+    The dashboard provides logs, session information, and tool usage statistics.
+    """
+
+    def apply(self) -> str:
+        """
+        Opens the Serena web dashboard in the default web browser.
+        """
+        if self.agent.open_dashboard():
+            return f"Serena web dashboard has been opened in the user's default web browser: {self.agent.get_dashboard_url()}"
+        else:
+            return f"Serena web dashboard could not be opened automatically; tell the user to open it via {self.agent.get_dashboard_url()}"
 
 
 class ActivateProjectTool(Tool, ToolMarkerDoesNotRequireActiveProject):
@@ -13,8 +28,10 @@ class ActivateProjectTool(Tool, ToolMarkerDoesNotRequireActiveProject):
 
         :param project: the name of a registered project to activate or a path to a project directory
         """
-        active_project = self.agent.activate_project_from_path_or_name(project)
-        return active_project.get_activation_message()
+        self.agent.activate_project_from_path_or_name(project)
+        result = self.agent.get_project_activation_message()
+        result += "\nIMPORTANT: If you have not yet read the 'Serena Instructions Manual', do it now before continuing!"
+        return result
 
 
 class RemoveProjectTool(Tool, ToolMarkerDoesNotRequireActiveProject, ToolMarkerOptional):
@@ -43,11 +60,11 @@ class SwitchModesTool(Tool, ToolMarkerOptional):
 
         :param modes: the names of the modes to activate
         """
-        mode_instances = [SerenaAgentMode.load(mode) for mode in modes]
-        self.agent.set_modes(mode_instances)
+        self.agent.set_modes(modes)
 
         # Inform the Agent about the activated modes and the currently active tools
-        result_str = f"Successfully activated modes: {', '.join([mode.name for mode in mode_instances])}" + "\n"
+        mode_instances = self.agent.get_active_modes()
+        result_str = f"Active modes: {', '.join([mode.name for mode in mode_instances])}" + "\n"
         result_str += "\n".join([mode_instance.prompt for mode_instance in mode_instances]) + "\n"
         result_str += f"Currently active tools: {', '.join(self.agent.get_active_tool_names())}"
         return result_str

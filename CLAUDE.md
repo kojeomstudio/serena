@@ -5,15 +5,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Development Commands
 
 **Essential Commands (use these exact commands):**
-- `uv run poe format` - Format code (BLACK + RUFF) - ONLY allowed formatting command
+- `uv run poe format` - Format code (RUFF) - ONLY allowed formatting command
 - `uv run poe type-check` - Run mypy type checking - ONLY allowed type checking command  
 - `uv run poe test` - Run tests with default markers (excludes java/rust by default)
 - `uv run poe test -m "python or go"` - Run specific language tests
+- `uv run poe test -m vue` - Run Vue tests
 - `uv run poe lint` - Check code style without fixing
 
 **Test Markers:**
 Available pytest markers for selective testing:
-- `python`, `go`, `java`, `rust`, `typescript`, `php`, `perl`, `csharp`, `elixir`, `terraform`, `clojure`, `swift`, `bash`, `ruby`, `ruby_solargraph`
+- `python`, `go`, `java`, `rust`, `typescript`, `vue`, `php`, `perl`, `powershell`, `csharp`, `elixir`, `terraform`, `clojure`, `swift`, `bash`, `ruby`, `ruby_solargraph`
 - `snapshot` - for symbolic editing operation tests
 
 **Project Management:**
@@ -100,14 +101,14 @@ Configuration is loaded from (in order of precedence):
 - **Symbol-based editing** - Uses LSP for precise code manipulation
 - **Caching strategy** - Reduces language server overhead
 - **Error recovery** - Automatic language server restart on crashes
-- **Multi-language support** - 16+ languages with LSP integration
+- **Multi-language support** - 19 languages with LSP integration (including Vue)
 - **MCP protocol** - Exposes tools to AI agents via Model Context Protocol
 - **Async operation** - Non-blocking language server interactions
 
 ## Working with the Codebase
 
 - Project uses Python 3.11 with `uv` for dependency management
-- Strict typing with mypy, formatted with black + ruff
+- Strict typing with mypy, formatted with ruff
 - Language servers run as separate processes with LSP communication
 - Memory system enables persistent project knowledge
 - Context/mode system allows workflow customization

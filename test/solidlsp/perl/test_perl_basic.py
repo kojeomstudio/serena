@@ -5,6 +5,7 @@ import pytest
 
 from solidlsp import SolidLanguageServer
 from solidlsp.ls_config import Language
+from test.solidlsp.conftest import format_symbol_for_assert, has_malformed_name, request_all_symbols
 
 
 @pytest.mark.perl
@@ -31,7 +32,7 @@ class TestPerlLanguageServer:
     def test_document_symbols(self, language_server: SolidLanguageServer) -> None:
         """Test that document symbols are correctly identified."""
         # Request document symbols
-        all_symbols, _ = language_server.request_document_symbols("main.pl", include_body=False)
+        all_symbols, _ = language_server.request_document_symbols("main.pl").get_all_symbols_and_roots()
 
         assert all_symbols, "Expected to find symbols in main.pl"
         assert len(all_symbols) > 0, "Expected at least one symbol"
@@ -74,3 +75,16 @@ class TestPerlLanguageServer:
         main_pl_lines = sorted([ref["range"]["start"]["line"] for ref in main_pl_refs])
         assert 17 in main_pl_lines, f"Expected reference at line 18 (0-indexed 17), found: {main_pl_lines}"
         assert 20 in main_pl_lines, f"Expected reference at line 21 (0-indexed 20), found: {main_pl_lines}"
+
+    @pytest.mark.parametrize("language_server", [Language.PERL], indirect=True)
+    def test_bare_symbol_names(self, language_server) -> None:
+        all_symbols = request_all_symbols(language_server)
+        malformed_symbols = []
+        for s in all_symbols:
+            if has_malformed_name(s):
+                malformed_symbols.append(s)
+        if malformed_symbols:
+            pytest.fail(
+                f"Found malformed symbols: {[format_symbol_for_assert(sym) for sym in malformed_symbols]}",
+                pytrace=False,
+            )

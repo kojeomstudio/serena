@@ -52,7 +52,11 @@ def scan_directory(
                     entry_path = entry.path
 
                     if rel_base:
-                        result_path = os.path.relpath(entry_path, rel_base)
+                        try:
+                            result_path = os.path.relpath(entry_path, rel_base)
+                        except:
+                            log.debug(f"Skipping entry due to relative path conversion error: {entry.path}")
+                            continue
                     else:
                         result_path = entry_path
 
@@ -161,10 +165,14 @@ class GitignoreParser:
 
         def scan(abs_path: str | None) -> Iterator[str]:
             for entry in os.scandir(abs_path):
-                if entry.is_dir(follow_symlinks=follow_symlinks):
-                    queue.append(entry.path)
-                elif entry.is_file(follow_symlinks=follow_symlinks) and entry.name == ".gitignore":
-                    yield entry.path
+                try:
+                    if entry.is_dir(follow_symlinks=follow_symlinks):
+                        queue.append(entry.path)
+                    elif entry.is_file(follow_symlinks=follow_symlinks) and entry.name == ".gitignore":
+                        yield entry.path
+                except PermissionError as ex:
+                    log.debug(f"Skipping entry due to permission error: {entry.path}", exc_info=ex)
+                    continue
 
         while queue:
             next_abs_path = queue.pop(0)
