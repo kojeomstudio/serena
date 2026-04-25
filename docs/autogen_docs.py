@@ -181,7 +181,7 @@ def autogen_about_intro_features():
     with open(readme_path, "r", encoding="utf-8") as f:
         readme_contents = f.read()
 
-    match = re.search(r"<h3.*?>(.*?)</h3>(.*?)^(## Features.*?)^## ", readme_contents, re.DOTALL | re.MULTILINE)
+    match = re.search(r"<h3.*?>(.*?)</h3>(.*?)^## Programming.*?^(## Features.*?)^## ", readme_contents, re.DOTALL | re.MULTILINE)
     assert match, f"Failed to extract about texts from README.md. {__file__} probably needs to be updated."
 
     tagline = match.group(1).strip()
@@ -194,6 +194,28 @@ def autogen_about_intro_features():
         f.write(autogen_info)
         f.write("# About Serena\n\n")
         f.write(f"**{tagline}**\n\n")
+
+        # adjust link
+        about_text = about_text.replace("resources/serena-block-diagram.svg", "https://raw.githubusercontent.com/oraios/serena/main/resources/serena-block-diagram.svg")
+
+        # remove centred links
+        about_text = re.subn(r'^<div align="center">.*?</div>\s*<br>$', "", about_text, flags=re.MULTILINE | re.DOTALL)[0]
+
+        # remove statements with links to quick start guide
+        about_text = re.subn(r"^.*\[Quick Start.*?$", r"", about_text, flags=re.MULTILINE)[0]
+
+        # remove callouts
+        about_text = re.subn(r"^> \[!\w+\]\s+(^>.*?$)+", "", about_text, flags=re.MULTILINE)[0]
+
+        # replace "Quick Demo" with "Video Introduction", removing the short video
+        about_text = about_text.replace("# Quick Demo", "# Video Introduction")
+        about_text = re.subn(r"^https://github.com/user-attachments/.*?$", "", about_text, flags=re.MULTILINE)[0]
+        about_text = about_text.replace(":tv: Longer video:", "Watch our video:")
+
+        # remove emojis (e.g. :tv:)
+        about_text = re.subn(r":\w+:\s+", "", about_text)[0]
+
+
         f.write(f"{about_text}\n\n")
 
     jetbrains_marketplace_link = ('```{raw} html\n'
@@ -201,9 +223,11 @@ def autogen_about_intro_features():
         '<img style="background-color:transparent;" src="../_static/images/jetbrains-marketplace-button.png">'
         '</a></p>\n```')
 
-    with open(Path(__file__).parent / "01-about" / "005_features.md", "w", encoding="utf-8") as f:
+    with open(Path(__file__).parent / "01-about" / "025_features.md", "w", encoding="utf-8") as f:
         f.write(autogen_info)
         features_text = re.subn(r"^#", r"", features_text, flags=re.MULTILINE)[0]
+        features_text = re.subn(r"</?details>", "", features_text, flags=re.MULTILINE)[0]
+        features_text = re.subn(r"<summary>.*?</summary>", "", features_text, flags=re.MULTILINE)[0]
         features_text = re.sub(r'<a href="https://plugins.jetbrains.com.*?</a>', jetbrains_marketplace_link, features_text, flags=re.DOTALL)
         f.write(f"{features_text}\n\n")
 

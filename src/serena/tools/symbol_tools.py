@@ -258,7 +258,8 @@ class FindReferencingSymbolsTool(Tool, ToolMarkerSymbolicRead):
 
         :param name_path: for finding the symbol to find references for, same logic as in the `find_symbol` tool.
         :param relative_path: the relative path to the file containing the symbol for which to find references.
-            Note that here you can't pass a directory but must pass a file.
+            Note: for external dependencies, this must be an identifier starting with `<ext` that you have received
+            earlier (don't try to guess!).
         :param include_kinds: same as in the `find_symbol` tool.
         :param exclude_kinds: same as in the `find_symbol` tool.
         :param max_answer_chars: same as in the `find_symbol` tool.
@@ -290,7 +291,7 @@ class FindReferencingSymbolsTool(Tool, ToolMarkerSymbolicRead):
                 ref_dict["content_around_reference"] = content_around_ref.to_display_string()
             reference_dicts.append(ref_dict)
 
-        # capture lightweight reference data before grouping, which mutates the dicts
+        # capture lightweight reference data before grouping
         ref_summaries = []
         for ref, d in zip(references_in_symbols, reference_dicts, strict=True):
             ref_summaries.append(
@@ -368,8 +369,8 @@ class InsertAfterSymbolTool(Tool, ToolMarkerSymbolicEdit):
         body: str,
     ) -> str:
         """
-        Inserts the given body/content after the end of the definition of the given symbol (via the symbol's location).
-        A typical use case is to insert a new class, function, method, field or variable assignment.
+        Use this to insert code after a class/method/function definition.
+        Don't use to insert after assignments (constants, fields).
 
         :param name_path: name path of the symbol after which to insert content (definitions in the `find_symbol` tool apply)
         :param relative_path: the relative path to the file containing the symbol

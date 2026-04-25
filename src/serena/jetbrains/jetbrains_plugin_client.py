@@ -18,6 +18,7 @@ from sensai.util.string import ToStringMixin
 
 import serena.jetbrains.jetbrains_types as jb
 from serena.config.serena_config import RegisteredProject
+from serena.constants import SerenaPorts
 from serena.jetbrains.jetbrains_types import PluginStatusDTO
 from serena.project import Project
 from serena.util.class_decorators import singleton
@@ -174,7 +175,7 @@ class JetBrainsPluginClient(ToStringMixin):
     Provides simple methods to interact with all available endpoints.
     """
 
-    BASE_PORT = 0x5EA2
+    BASE_PORT = SerenaPorts.JETBRAINS_PLUGIN_SERVER_BASE_PORT
     PLUGIN_REQUEST_TIMEOUT = 300
     """
     the timeout used for request handling within the plugin (a constant in the plugin)
@@ -425,13 +426,14 @@ class JetBrainsPluginClient(ToStringMixin):
         self._postprocess_symbol_collection_response(symbol_collection)
         return symbol_collection
 
-    def move_symbol(
+    def move(
         self,
         name_path: str | None,
         relative_path: str | None,
         target_parent_name_path: str | None,
         target_relative_path: str | None,
     ) -> dict[str, Any]:
+        self._require_version_at_least(2023, 2, 14)
         request_data = {
             "namePath": name_path,
             "relativePath": relative_path,
@@ -527,6 +529,7 @@ class JetBrainsPluginClient(ToStringMixin):
         :param relative_path: the relative path to the file containing the symbol
         :param delete_even_if_used: if True, delete the symbol even if it has usages
         """
+        self._require_version_at_least(2023, 2, 14)
         request_data = {
             "namePath": name_path,
             "relativePath": relative_path,
@@ -548,6 +551,7 @@ class JetBrainsPluginClient(ToStringMixin):
         :param relative_path: the relative path to the file containing the method
         :param keep_definition: if True, keep the original method definition after inlining
         """
+        self._require_version_at_least(2023, 2, 14)
         request_data = {
             "namePath": name_path,
             "relativePath": relative_path,
@@ -599,6 +603,7 @@ class JetBrainsPluginClient(ToStringMixin):
         :param include_body: whether to include the symbol body
         :param include_quick_info: whether to include quick info about the symbol
         """
+        self._require_version_at_least(2023, 2, 14)
         request_data = {
             "relativePath": relative_path,
             "line": line,
@@ -618,6 +623,7 @@ class JetBrainsPluginClient(ToStringMixin):
         :param name_path: the name path of the symbol
         :param include_quick_info: whether to include quick info about the symbol
         """
+        self._require_version_at_least(2023, 2, 14)
         request_data = {
             "relativePath": relative_path,
             "namePath": name_path,
@@ -626,6 +632,34 @@ class JetBrainsPluginClient(ToStringMixin):
         symbol_collection = cast(jb.SymbolCollectionResponse, self._make_request("POST", "/findImplementations", request_data))
         self._postprocess_symbol_collection_response(symbol_collection)
         return symbol_collection
+
+    def debug_eval(self, repl_key: str, expression: str) -> dict[str, Any]:
+        """
+        Evaluates a Groovy expression in the persistent debug REPL.
+
+        :param repl_key: the session key identifying the REPL instance
+        :param expression: the Groovy expression to evaluate
+        :return: the response containing REPL key and result
+        """
+        self._require_version_at_least(2023, 2, 16)
+        request_data = {
+            "replKey": repl_key,
+            "expression": expression,
+        }
+        return self._make_request("POST", "/debugReplEval", request_data)
+
+    def debug_close(self, repl_key: str) -> dict[str, Any]:
+        """
+        Closes the debug REPL for the given session key, clearing all state.
+
+        :param repl_key: the key identifying the REPL instance to close
+        :return: the status response
+        """
+        self._require_version_at_least(2023, 2, 16)
+        request_data = {
+            "replKey": repl_key,
+        }
+        return self._make_request("POST", "/debugReplClose", request_data)
 
     def close(self) -> None:
         self._session.close()

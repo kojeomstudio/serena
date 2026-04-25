@@ -332,7 +332,15 @@ class SerenaMCPFactory:
         # retain only FASTMCP_ prefix for already set environment variables.
         Settings.model_config = SettingsConfigDict(env_prefix="FASTMCP_")
         instructions = self._get_initial_instructions()
-        mcp = FastMCP(lifespan=self.server_lifespan, host=host, port=port, instructions=instructions)
+        log.info("MCP server initial instructions:\n%s", instructions)
+        mcp = FastMCP(
+            name="Serena",
+            lifespan=self.server_lifespan,
+            website_url="https://oraios.github.io/serena",
+            host=host,
+            port=port,
+            instructions=instructions,
+        )
         return mcp
 
     @asynccontextmanager
@@ -346,8 +354,8 @@ class SerenaMCPFactory:
         finally:
             log.info("MCP server shutting down")
             if self.agent is not None:
-                self.agent.shutdown()
+                self.agent.on_shutdown()
 
     def _get_initial_instructions(self) -> str:
         assert self.agent is not None
-        return self.agent.create_system_prompt()
+        return self.agent.create_connection_prompt()
