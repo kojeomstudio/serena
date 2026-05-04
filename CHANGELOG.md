@@ -2,12 +2,17 @@
 
 Status of the `main` branch. Changes prior to the next official version change will appear here.
 
+* Hooks:
+  - `serena-hooks auto-approve` now also emits an `allow` decision when Claude Code reports
+    `permission_mode == "auto"`, in addition to the existing `acceptEdits` behavior. #1386
+
 * General:
   - Breaking change in mode definitions: Projects (project.yml) can no longer override `base_modes`.
     Instead, they can define `added_modes` to add modes on top of base and default modes.  
     See updated [documentation on modes](https://oraios.github.io/serena/02-usage/050_configuration.html#modes).
   - Serena's default configuration now uses `interactive` and `editing` as `base_modes` instead of as `default_modes`. 
-
+  - Add cross-package reference support via `additional_workspace_folders` setting (currently implemented for TypeScript).
+  
 * JetBrains:
   - Add new tools:
     - `jet_brains_list_inspections`: Lists available IDE inspections (akin to diagnostics), optionally filtered by language or group
@@ -21,6 +26,7 @@ Status of the `main` branch. Changes prior to the next official version change w
     - `get_diagnostics_for_symbol`: Retrieves diagnostics pertaining to a specific symbol
 
 * Language Servers:
+  - Elixir (`elixir-tools/next-ls`): Fix deadlock in monorepo projects where `mix.exs` lives in a subdirectory. The server now searches immediate subdirectories when no `mix.exs` is found at the repository root. #1444
   - Java (`eclipse.jdt.ls`): Add upstream JDTLS mode for offline / restricted-network use. Setting both `jdtls_path` and `lombok_path` in `ls_specific_settings.java` makes Serena use an existing upstream JDTLS installation (e.g. `brew install jdtls`) and the system JDK 21+, skipping the ~500 MB vscode-java VSIX, Gradle, and IntelliCode downloads. New related setting `java_home` lets the user override the JDK used to launch JDTLS. Default behavior unchanged — the JDTLS workspace hash is preserved bit-for-bit for users on the default route, so existing project caches are reused without a one-time reindex; the launcher path is mixed into the hash only when `jdtls_path` is set, isolating upstream installations from the default workspace. #1415
 
 # v1.2.0 (2026-04-27)
