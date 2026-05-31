@@ -2,8 +2,38 @@
 
 Status of the `main` branch. Changes prior to the next official version change will appear here.
 
+* Language Servers:
+  - `typescript_vts`: Add `initialization_options` setting in `ls_specific_settings.typescript_vts`.
+    The dict is forwarded to vtsls via `initializationOptions`, `workspace/didChangeConfiguration`,
+    and `workspace/configuration` pulls. Enables Yarn PnP setups with `typescript.tsdk` pointing
+    at the Yarn-generated SDK.
+
+* Dashboard: 
+  - Fix: Host validation required a local host regardless of the listen address (regression introduced in v1.5.2),
+    preventing remote connections
+
+# v1.5.3 (2026-05-26)
+
+Add meta-data for the GitHub MCP registry
+
+# v1.5.2 (2026-05-26)
+
+* General:
+  - Not existing paths return `False` on is ignored checks (instead of raising an error)
+  - Add `serena-agent` CLI command so that `uvx serena-agent` can be used as entrypoint.
+  - Fortls and pyright are now installed on the fly instead of being bundled in the serena-agent package.
+
+* Dashboard:
+  - Add host validation
+
+* Hooks:
+  - Extend list of extensions that are considered code files (affects the reminder hook counter).
+
 # v1.5.1 (2026-05-18)
 
+* General:
+  - Fix `onboarding_tool`: Used incorrect path to bootstrap memory (regression in v1.5.0)  
+ 
 * Language Servers:
   - Add **CUE** support via the LSP mode of the official [`cue` CLI](https://github.com/cue-lang/cue) (`cue lsp`).
 
@@ -11,6 +41,7 @@ Status of the `main` branch. Changes prior to the next official version change w
 
 * General:
   - Make tool descriptions more amenable to tool search mechanisms as now used in several clients (e.g. avoid referencing other tools' names, etc.)
+  - Onboarding is now less invasive (LLM is instructed to ask the user whether to proceed)
 
 * Language Servers:
   - No longer store temporary files (e.g. downloads) in `~/solidlsp_tmp`; instead, use OS-specific temporary directories
