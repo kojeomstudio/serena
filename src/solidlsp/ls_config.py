@@ -142,6 +142,8 @@ class Language(str, Enum):
     """Jedi language server for Python (instead of pyright, which is the default)"""
     PYTHON_TY = "python_ty"
     """Ty language server for Python (instead of pyright, which is the default)."""
+    PYTHON_PYREFLY = "python_pyrefly"
+    """Pyrefly language server for Python (instead of pyright, which is the default)."""
     CSHARP_OMNISHARP = "csharp_omnisharp"
     """OmniSharp language server for C# (instead of the default csharp-ls by microsoft).
     Currently has problems with finding references, and generally seems less stable and performant.
@@ -154,10 +156,19 @@ class Language(str, Enum):
     """Phpactor language server for PHP (instead of Intelephense, which is the default).
     Requires PHP 8.1+ on the system. Fully open-source (MIT license).
     """
+    PHP_PHPANTOM = "php_phpantom"
+    """PHPantom language server for PHP (instead of Intelephense, which is the default).
+    Uses the open-source Rust-based phpantom_lsp binary and can be auto-downloaded.
+    """
     MARKDOWN = "markdown"
     """Marksman language server for Markdown (experimental).
     Must be explicitly specified as the main language, not auto-detected.
     This is an edge case primarily useful when working on documentation-heavy projects.
+    """
+    LATEX = "latex"
+    """texlab language server for LaTeX/BibTeX (experimental).
+    Must be explicitly specified as the main language, not auto-detected.
+    Provides sectioning-hierarchy document symbols plus label/citation definitions and references.
     """
     YAML = "yaml"
     """YAML language server (experimental).
@@ -244,10 +255,13 @@ class Language(str, Enum):
             self.TYPESCRIPT_VTS,
             self.PYTHON_JEDI,
             self.PYTHON_TY,
+            self.PYTHON_PYREFLY,
             self.CSHARP_OMNISHARP,
             self.RUBY_SOLARGRAPH,
             self.PHP_PHPACTOR,
+            self.PHP_PHPANTOM,
             self.MARKDOWN,
+            self.LATEX,
             self.YAML,
             self.JSON,
             self.TOML,
@@ -263,7 +277,7 @@ class Language(str, Enum):
         """Whether the supported language should be considered a programming language.
         Solidlsp supports languages like markdown or json, this method returns False for them.
         """
-        return self not in frozenset((self.MARKDOWN, self.JSON, self.TOML, self.YAML, self.ANSIBLE))
+        return self not in frozenset((self.MARKDOWN, self.LATEX, self.JSON, self.TOML, self.YAML, self.ANSIBLE))
 
     def __str__(self) -> str:
         return self.value
@@ -293,7 +307,7 @@ class Language(str, Enum):
 
     def get_source_fn_matcher(self) -> FilenameMatcher:
         match self:
-            case self.PYTHON | self.PYTHON_JEDI | self.PYTHON_TY:
+            case self.PYTHON | self.PYTHON_JEDI | self.PYTHON_TY | self.PYTHON_PYREFLY:
                 return FilenameMatcher(".py", ".pyi")
             case self.JAVA:
                 return FilenameMatcher(".java")
@@ -350,6 +364,11 @@ class Language(str, Enum):
                     # OpenCL
                     ".cl",
                     ".clcpp",
+                    # Arduino sketch: not in clang's extension table, but it is C++.
+                    # Routing it here lets clangd serve symbols; the project must
+                    # tell clangd it is C++ (a .clangd with CompileFlags Add: [-xc++],
+                    # or a compile DB), since the clang driver can't infer a job from .ino.
+                    ".ino",
                     case_sensitive=False,
                 )
             case self.CPP_CCLS:
@@ -375,13 +394,15 @@ class Language(str, Enum):
                     # Objective-C
                     ".m",
                     ".mm",
+                    # Arduino sketch (C++); see note in the CPP case above.
+                    ".ino",
                     case_sensitive=False,
                 )
             case self.KOTLIN:
                 return FilenameMatcher(".kt", ".kts")
             case self.DART:
                 return FilenameMatcher(".dart")
-            case self.PHP | self.PHP_PHPACTOR:
+            case self.PHP | self.PHP_PHPACTOR | self.PHP_PHPANTOM:
                 return FilenameMatcher(".php")
             case self.R:
                 return FilenameMatcher(".R", ".r", ".Rmd", ".Rnw")
@@ -429,6 +450,8 @@ class Language(str, Enum):
                 return FilenameMatcher(".rego")
             case self.MARKDOWN:
                 return FilenameMatcher(".md", ".markdown")
+            case self.LATEX:
+                return FilenameMatcher(".tex", ".bib", ".sty", ".cls")
             case self.SCALA:
                 return FilenameMatcher(".scala", ".sbt")
             case self.JULIA:
@@ -527,6 +550,10 @@ class Language(str, Enum):
                 from solidlsp.language_servers.ty_server import TyLanguageServer
 
                 return TyLanguageServer
+            case self.PYTHON_PYREFLY:
+                from solidlsp.language_servers.pyrefly_server import PyreflyLanguageServer
+
+                return PyreflyLanguageServer
             case self.JAVA:
                 from solidlsp.language_servers.eclipse_jdtls import EclipseJDTLS
 
@@ -544,7 +571,7 @@ class Language(str, Enum):
 
                 return CSharpLanguageServer
             case self.CSHARP_OMNISHARP:
-                from solidlsp.language_servers.omnisharp import OmniSharp  # type: ignore[attr-defined]
+                from solidlsp.language_servers.omnisharp import OmniSharp
 
                 return OmniSharp
             case self.TYPESCRIPT:
@@ -595,6 +622,10 @@ class Language(str, Enum):
                 from solidlsp.language_servers.phpactor import PhpactorServer
 
                 return PhpactorServer
+            case self.PHP_PHPANTOM:
+                from solidlsp.language_servers.phpantom import PHPantomServer
+
+                return PHPantomServer
             case self.PERL:
                 from solidlsp.language_servers.perl_language_server import PerlLanguageServer
 
@@ -648,7 +679,7 @@ class Language(str, Enum):
 
                 return ZigLanguageServer
             case self.NIX:
-                from solidlsp.language_servers.nixd_ls import NixLanguageServer  # type: ignore
+                from solidlsp.language_servers.nixd_ls import NixLanguageServer
 
                 return NixLanguageServer
             case self.LUA:
@@ -681,6 +712,10 @@ class Language(str, Enum):
                 from solidlsp.language_servers.marksman import Marksman
 
                 return Marksman
+            case self.LATEX:
+                from solidlsp.language_servers.texlab_language_server import TexlabLanguageServer
+
+                return TexlabLanguageServer
             case self.R:
                 from solidlsp.language_servers.r_language_server import RLanguageServer
 

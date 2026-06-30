@@ -9,12 +9,14 @@ from typing import Any, cast
 
 from overrides import override
 
+from solidlsp.language_servers.common import UE_IGNORED_DIRNAMES
 from solidlsp.ls import LanguageServerDependencyProvider, LanguageServerDependencyProviderSinglePath, ProcessLaunchInfo, SolidLanguageServer
 from solidlsp.ls_config import LanguageServerConfig
+from solidlsp.ls_exceptions import SolidLSPException
 from solidlsp.lsp_protocol_handler.lsp_types import InitializeParams
 from solidlsp.settings import SolidLSPSettings
 
-from .common import RuntimeDependency, RuntimeDependencyCollection
+from .common import RuntimeDependency, RuntimeDependencyCollection, is_unreal_engine_project
 
 log = logging.getLogger(__name__)
 
@@ -80,7 +82,7 @@ class ClangdLanguageServer(SolidLanguageServer):
     @override
     def _document_symbols_cache_fingerprint(self) -> Hashable:
         cache_format_version = 1
-        cpp_settings: dict[str, Any] = self._custom_settings or {}
+        cpp_settings = self._custom_settings or {}
         return (
             cache_format_version,
             cpp_settings.get("clangd_version"),
@@ -103,10 +105,32 @@ class ClangdLanguageServer(SolidLanguageServer):
 
     @override
     def is_ignored_dirname(self, dirname: str) -> bool:
-        ignored_dirs = [
-            ".ccls-cache",
-        ]
-        return super().is_ignored_dirname(dirname) or dirname in ignored_dirs
+        return (
+            super().is_ignored_dirname(dirname)
+            or dirname == ".ccls-cache"
+            or (is_unreal_engine_project(self.repository_root_path) and dirname in UE_IGNORED_DIRNAMES)
+        )
+
+    def _raise_if_unreal_without_compile_db(self) -> None:
+        """Raise if this is an Unreal Engine project without a usable compilation database.
+
+        clangd cannot resolve engine headers or macros without one. Non-UE projects return
+        without raising, since clangd works without a database there.
+        """
+        if not is_unreal_engine_project(self.repository_root_path):
+            return
+        raise SolidLSPException(
+            f"No usable compile_commands.json at {self.repository_root_path}, but this looks like an "
+            "Unreal Engine project (.uproject present). clangd needs a non-empty compilation database "
+            "to resolve engine headers and macros.\n\n"
+            "Generate one from the engine's <Engine>\\Binaries\\DotNET\\UnrealBuildTool\\ directory:\n"
+            '  UnrealBuildTool.exe -mode=GenerateClangDatabase -project="<Proj>.uproject" '
+            '<Proj>Editor Win64 Development -OutputDir="<projectDir>"\n'
+            "Without a clang toolchain, append -Compiler=VisualStudio2022 to build an MSVC database instead.\n\n"
+            "Build the editor target once first so the generated headers exist. After creating the "
+            "database, reconnect or restart Serena's MCP so the language server re-checks for it.\n"
+            "See docs/03-special-guides/unreal_engine_setup_guide_for_serena.md for details."
+        )
 
     def _prepare_compile_commands(self) -> str | None:
         """
@@ -128,7 +152,8 @@ class ClangdLanguageServer(SolidLanguageServer):
         compile_db_path = os.path.join(self.repository_root_path, "compile_commands.json")
 
         if not os.path.exists(compile_db_path):
-            # No compile_commands.json, nothing to do
+            # clangd can't resolve UE engine headers without the database; fail with guidance.
+            self._raise_if_unreal_without_compile_db()
             return None
 
         try:
@@ -136,6 +161,8 @@ class ClangdLanguageServer(SolidLanguageServer):
                 compile_commands = json.load(f)
 
             if not compile_commands:
+                # An empty [] database is treated like a missing one.
+                self._raise_if_unreal_without_compile_db()
                 return None
 
             # Check if any entries have relative directory paths
@@ -152,7 +179,7 @@ class ClangdLanguageServer(SolidLanguageServer):
                 return None
 
             # Get the target directory from ls_specific_settings, default to .serena
-            cpp_settings: dict[str, Any] = self._custom_settings or {}
+            cpp_settings = self._custom_settings or {}
             compile_commands_rel_dir = cpp_settings.get("compile_commands_dir", ".serena")
             compile_commands_dir = os.path.join(self.repository_root_path, compile_commands_rel_dir)
             os.makedirs(compile_commands_dir, exist_ok=True)
@@ -384,9 +411,9 @@ class ClangdLanguageServer(SolidLanguageServer):
 
         text_document_sync = capabilities["textDocumentSync"]
         if isinstance(text_document_sync, int):
-            assert text_document_sync == 2  # type: ignore
+            assert text_document_sync == 2
         else:
-            assert text_document_sync["change"] == 2  # type: ignore
+            assert text_document_sync["change"] == 2
 
         assert "completionProvider" in capabilities
         completion_provider = capabilities["completionProvider"]

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+import pathlib
 import platform
 import shutil
 import subprocess
@@ -105,7 +106,7 @@ class RuntimeDependencyCollection:
         if not PlatformUtils.get_platform_id().is_windows():
             import pwd
 
-            kwargs["user"] = pwd.getpwuid(os.getuid()).pw_name  # type: ignore
+            kwargs["user"] = pwd.getpwuid(os.getuid()).pw_name
 
         command = subprocess_util.convert_shell_cmd(command)
         log.info("Running command %s in '%s'", f"'{command}'" if isinstance(command, str) else command, cwd)
@@ -119,7 +120,7 @@ class RuntimeDependencyCollection:
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             **kwargs,
-        )  # type: ignore
+        )
         if completed_process.returncode != 0:
             log.warning("Command '%s' failed with return code %d", command, completed_process.returncode)
             log.warning("Command output:\n%s", completed_process.stdout)
@@ -216,3 +217,13 @@ def quote_windows_path(path: str) -> str:
             return path
         return f'"{path}"'
     return path
+
+
+UE_IGNORED_DIRNAMES = frozenset({"Binaries", "DerivedDataCache", "Intermediate", "Saved"})
+"""Unreal Engine build and cache directories. Matched per directory name, so per-plugin and
+per-module copies (e.g. ``Plugins/Foo/Intermediate``) are covered too."""
+
+
+def is_unreal_engine_project(repository_root_path: str) -> bool:
+    """:return: whether the repository root contains an Unreal Engine ``.uproject`` file."""
+    return any(pathlib.Path(repository_root_path).glob("*.uproject"))
