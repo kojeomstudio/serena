@@ -5,7 +5,13 @@ Status of the `main` branch. Changes prior to the next official version change w
 * General:
   - Add notion of trusted projects via new global configuration setting `trusted_project_path_patterns`.
     Current effects:
-    - `ls_specific_settings` defined in project configurations will only be applied for trusted projects    
+    - `ls_specific_settings` defined in project configurations will only be applied for trusted projects
+    - `activation_command` (and `activation_command_timeout`) defined in project configurations will only
+      be executed for trusted projects: an optional shell command run in the project root before the
+      language backend initialises (e.g. to generate source files a language server needs to index).
+      Exit code is the primary completion signal; `activation_command_timeout` (default 180s) is a safety
+      backstop — on expiry the process is killed and activation continues. Failures and timeouts are
+      logged but do not abort activation.
   - Fix: context or mode argument referencing a known name (e.g. `--context anitgravity`) could result in   
     incorrect file access if a corresponding local file existed (e.g. `./antigravity` binary);
     file access is now guarded with path detection (file ending or path separator must be present)
@@ -18,6 +24,12 @@ Status of the `main` branch. Changes prior to the next official version change w
   - Update prompts/instructions: Serena instructions manual, modes (editing, interactive) 
   - Allow structured tool output to be configured on a per-context basis, disabling it for Claude Code
     (which does not correctly unpack structured output) #1042
+  - Fix: Project-specific filtering of files for source files ignored the language backend. 
+    The check is really only possible for LSP. 
+  - Fix: File system permission errors during gitignore scanning were not caught #1624
+  - During project creation, language composition percentages are now computed relative to the total number 
+    of recognised source files instead of all files, i.e. unrecognised files are ignored in the percentage 
+    computation.
 
 * CLI:
   - Fix `--project-from-cwd` hijacking git worktrees nested under a Serena project. `find_project_root`
@@ -39,6 +51,9 @@ Status of the `main` branch. Changes prior to the next official version change w
   - C/C++ (clangd): improve support and documentation for Unreal Engine 5 projects.
   - `typescript_vts`: Add `initialization_options` setting in `ls_specific_settings.typescript_vts`. 
     Enables Yarn PnP setups with `typescript.tsdk` pointing at the Yarn-generated SDK.
+  - TypeScript/VTS: disable automatic typing acquisition during initialization (no network
+    downloads at startup) and replace the fixed 2-second cross-file reference wait with
+    event-based `$/progress` indexing tracking (configurable `indexing_timeout`, default 30s)
   - C#: minor fixes in Omnisharp and Roslyn that prevented startup on some systems #1617
   - `SvelteLanguageServer`: Fix diagnostics requests for TypeScript/JavaScript files incorrectly being
     processed by the Svelte LS instead of the TypeScript LS.
@@ -50,6 +65,12 @@ Status of the `main` branch. Changes prior to the next official version change w
   - Improve quoting of arguments in shell executions
   - Add **LaTeX** support (experimental) via [texlab](https://github.com/latex-lsp/texlab).
   - PHP: add support for PHPantom as alternative to the already supported PHP LS #1554.
+  - Add new launch command customization options: `ls_args`, `ls_extra_args` and `ls_base_cmd`
+  - Add new configuration option `ls_workspace_folders` to allow indexed source folders to be specified
+    explicitly. In monorepos, this allows the set of indexed folders to be restricted to a subset of
+    the repository. #1627
+  - Rename configuration option `additional_workspace_folders` to `ls_additional_workspace_folders`
+    and support the option across all language servers (previously limited to TypeScript).
 
 * JetBrains:
   - Add configuration option `jetbrains_launch_command`, allowing Serena to spawn IDE instances automatically
