@@ -279,6 +279,11 @@ class LanguageServerDependencyProvider(ABC):
     """
 
     def __init__(self, custom_settings: SolidLSPSettings.CustomLSSettings, ls_resources_dir: str):
+        """
+        :param custom_settings: the (user-provided) language server-specific settings
+        :param ls_resources_dir: the directory in which data for the language-server shall be stored
+            (this is already specific to the concrete language server, i.e. no further subdirectory is needed)
+        """
         self._custom_settings = custom_settings
         self._ls_resources_dir = ls_resources_dir
 
@@ -633,9 +638,8 @@ class SolidLanguageServer(ABC):
         repository_root_path = os.path.abspath(repository_root_path)
 
         ls_class = config.code_language.get_ls_class()
-        # For now, we assume that all language server implementations have the same signature of the constructor
-        # (which, unfortunately, differs from the signature of the base class).
-        # If this assumption is ever violated, we need branching logic here.
+        # All language server implementations are required to use the same signature of the constructor
+        # (which differs from the signature of the base class constructor).
         ls = ls_class(config, repository_root_path, solidlsp_settings)
         ls.set_request_timeout(timeout)
         return ls
@@ -674,6 +678,9 @@ class SolidLanguageServer(ABC):
         self._solidlsp_settings = solidlsp_settings
         lang = self.get_language_enum_instance()
         self._custom_settings = solidlsp_settings.get_ls_specific_settings(lang)
+        """
+        the (user-provided) language server-specific settings
+        """
         self._ls_resources_dir = self.ls_resources_dir(solidlsp_settings)
         log.debug(f"Custom config (LS-specific settings) for {lang}: {self._custom_settings}")
         self._encoding = config.encoding
@@ -755,6 +762,13 @@ class SolidLanguageServer(ABC):
         but which are not indexed by SolidLSP, i.e. not traversed for full symbol tree
         """
         self._abs_workspace_folders_all = self._abs_workspace_folders_indexed + self._abs_workspace_folders_additional
+
+    @property
+    def custom_settings(self) -> SolidLSPSettings.CustomLSSettings:
+        """
+        The (user-provided) language server-specific settings.
+        """
+        return self._custom_settings
 
     def _create_dependency_provider(self) -> LanguageServerDependencyProvider:
         """
@@ -3307,6 +3321,7 @@ class SolidLanguageServer(ABC):
     def _create_initialize_params_builder(self) -> InitializeParamsBuilder:
         return DefaultInitializeParamsBuilder(self)
 
+    @abstractmethod
     def _create_base_initialize_params(self) -> dict | InitializeParams:
         """
         Subclasses should override this method to provide server-specific InitializeParams settings,
@@ -3326,7 +3341,6 @@ class SolidLanguageServer(ABC):
 
         :return: the base InitializeParams settings
         """
-        raise NotImplementedError
 
     def _create_initialize_params(self) -> InitializeParams:
         """

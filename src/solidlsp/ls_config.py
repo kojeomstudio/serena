@@ -8,6 +8,7 @@ import re
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 from enum import Enum
+from functools import cache
 from pathlib import Path
 from typing import TYPE_CHECKING, Self
 
@@ -310,6 +311,7 @@ class Language(str, Enum):
         """
         return self.get_ls_class().supports_implementation_request()
 
+    @cache
     def get_source_fn_matcher(self) -> FilenameMatcher:
         match self:
             case self.PYTHON | self.PYTHON_JEDI | self.PYTHON_TY | self.PYTHON_PYREFLY:
@@ -834,10 +836,13 @@ class Language(str, Enum):
 @dataclass(frozen=True)
 class LanguageServerConfig:
     """
-    Configuration parameters
+    Configuration parameters for a language server instance
     """
 
     code_language: Language
+    """
+    defines the language server to use
+    """
     workspace_folders: list[str] = field(default_factory=lambda: ["."])
     """
     list of workspace folders to be used by the language server and to be fully indexed by SolidLSP.
